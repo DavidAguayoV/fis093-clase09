@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un qubit en la esfera de Bloch — FIS093</title>
+<style>
+  :root {
+    --tinta: #12303f;
+    --texto: #263b47;
+    --suave: #5d7480;
+    --borde: #d5e0e5;
+    --fondo: #f4f7f8;
+    --tarjeta: #ffffff;
+    --azul: #1b7f9c;
+    --azul-claro: #e2f1f5;
+    --naranja: #d9661f;
+    --naranja-claro: #fbeadd;
+    --verde: #2c7a55;
+    --verde-claro: #e3f3ea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--texto);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; }
+  header h1 { font-size: 1.25rem; margin: 4px 0 2px; color: var(--tinta); }
+  header p { margin: 0; color: var(--suave); font-size: .9rem; }
+
+  .pasos { display: flex; gap: 6px; margin: 16px 0 12px; }
+  .pasos span { flex: 1; height: 6px; border-radius: 3px; background: var(--borde); }
+  .pasos span.hecho { background: var(--azul); }
+  .pasos span.actual { background: var(--tinta); }
+
+  .tarjeta {
+    background: var(--tarjeta); border: 1px solid var(--borde);
+    border-radius: 14px; padding: 18px 16px;
+  }
+  .etiqueta { font-size: .8rem; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--azul); }
+  h2 { font-size: 1.1rem; margin: 2px 0 10px; color: var(--tinta); }
+  p { margin: 0 0 10px; }
+
+  /* esfera */
+  .esfera { display: block; width: 100%; max-width: 300px; margin: 0 auto; }
+  .estado { text-align: center; font-size: .9rem; color: var(--suave); margin: 0 0 12px; min-height: 1.4em; }
+  .estado b { color: var(--tinta); }
+
+  /* circuito */
+  .circuito {
+    display: flex; align-items: center; margin: 6px 0 8px;
+    padding: 12px 8px; background: var(--fondo); border-radius: 10px;
+  }
+  .cable { flex: 1; min-width: 6px; height: 2px; background: var(--tinta); }
+  .inicio {
+    width: 40px; height: 40px; border-radius: 50%; flex: none;
+    display: grid; place-items: center; font-weight: 700; font-size: 1.05rem;
+    color: var(--tinta); background: #e9eef0; border: 2px solid var(--tinta);
+  }
+  .puerta {
+    flex: none; min-width: 40px; height: 40px; padding: 0 5px; border-radius: 8px;
+    display: grid; place-items: center; font-weight: 700; font-size: .9rem; color: #fff;
+    opacity: .55; transition: opacity .2s, transform .2s;
+  }
+  .puerta.hecha { opacity: 1; }
+  .puerta.activa { opacity: 1; transform: scale(1.15); box-shadow: 0 0 0 3px rgba(18,48,63,.25); }
+  .puerta.NOT { background: var(--naranja); }
+  .puerta.H { background: var(--azul); }
+  .puerta.M { background: var(--verde); }
+  .medidor {
+    flex: none; height: 40px; padding: 0 7px; border-radius: 8px;
+    display: grid; place-items: center; font-size: .8rem; font-weight: 600;
+    color: var(--tinta); background: #fff; border: 2px dashed var(--suave);
+  }
+  .leyenda { font-size: .85rem; color: var(--suave); margin: 0 0 12px; }
+  .leyenda b.NOT { color: var(--naranja); } .leyenda b.H { color: var(--azul); } .leyenda b.M { color: var(--verde); }
+
+  .pregunta { font-weight: 600; color: var(--tinta); margin: 0 0 10px; }
+  .opciones { display: grid; gap: 8px; margin-bottom: 14px; }
+  button { font: inherit; cursor: pointer; }
+  .opcion {
+    text-align: left; padding: 12px 14px; border-radius: 10px;
+    border: 2px solid var(--borde); background: #fff; color: var(--texto);
+  }
+  .opcion.elegida { border-color: var(--tinta); background: var(--azul-claro); font-weight: 600; }
+  .opcion:disabled { cursor: default; opacity: .75; }
+  .principal {
+    width: 100%; padding: 14px; border: 0; border-radius: 10px;
+    background: var(--tinta); color: #fff; font-weight: 700; font-size: 1rem;
+  }
+  .principal:disabled { background: #b7c4ca; cursor: not-allowed; }
+  .secundario {
+    padding: 12px 10px; border-radius: 10px; border: 2px solid var(--tinta);
+    background: #fff; color: var(--tinta); font-weight: 600;
+  }
+  .secundario.NOT { border-color: var(--naranja); color: var(--naranja); }
+  .secundario.H { border-color: var(--azul); color: var(--azul); }
+  .secundario.M { border-color: var(--verde); color: var(--verde); }
+  #zonaLibre .secundario { padding: 12px 4px; font-size: .86rem; white-space: nowrap; }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fila > * { flex: 1; }
+  .aviso { font-size: .85rem; color: var(--suave); margin: 8px 0 0; text-align: center; }
+
+  /* resultados */
+  .resultado { margin-top: 16px; }
+  .rejilla { display: grid; grid-template-columns: repeat(20, 1fr); gap: 2px; margin-bottom: 12px; }
+  .rejilla i { aspect-ratio: 1; border-radius: 2px; background: var(--borde); }
+  .rejilla i.c0 { background: #8fa3ad; }
+  .rejilla i.c1 { background: var(--naranja); }
+  .barra { display: grid; grid-template-columns: 62px 1fr 64px; align-items: center; gap: 8px;
+    margin: 6px 0; font-size: .95rem; }
+  .barra .pista { height: 18px; background: var(--fondo); border-radius: 9px; overflow: hidden; }
+  .barra .relleno { height: 100%; width: 0; border-radius: 9px; }
+  .barra .relleno.c0 { background: #8fa3ad; } .barra .relleno.c1 { background: var(--naranja); }
+  .barra .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--tinta); }
+
+  .cierre { margin-top: 14px; padding: 12px 14px; border-radius: 10px; }
+  .cierre.bien { background: var(--verde-claro); border-left: 4px solid var(--verde); }
+  .cierre.mal { background: var(--naranja-claro); border-left: 4px solid var(--naranja); }
+  .cierre.neutro { background: var(--azul-claro); border-left: 4px solid var(--azul); }
+  .cierre strong { color: var(--tinta); }
+  .cierre p { margin: 4px 0 0; }
+  .oculto { display: none !important; }
+  footer { margin-top: 18px; font-size: .8rem; color: var(--suave); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Un qubit en la esfera de Bloch</h1>
+    <p>FIS093 · En grupos de 2 o 3 · Primero se adivina, después se mide.</p>
+  </header>
+
+  <div class="pasos" id="pasos" aria-hidden="true"></div>
+
+  <section class="tarjeta" aria-live="polite">
+    <div class="etiqueta" id="etiqueta"></div>
+    <h2 id="titulo"></h2>
+
+    <!-- Introducción -->
+    <div id="intro">
+      <p>El estado de un qubit se dibuja como una <b>flecha dentro de una esfera</b>.
+        Se llama esfera de Bloch.</p>
+    </div>
+
+    <div class="circuito" id="circuito" aria-label="Circuito"></div>
+
+    <canvas class="esfera" id="esfera" width="600" height="560"
+      aria-label="Esfera de Bloch con la flecha del estado"></canvas>
+    <p class="estado" id="estado"></p>
+
+    <div id="introBotones">
+      <div class="fila" style="margin-bottom:12px">
+        <button class="secundario" data-ver="0">Flecha en 0</button>
+        <button class="secundario" data-ver="m">Al costado</button>
+        <button class="secundario" data-ver="1">Flecha en 1</button>
+      </div>
+      <p>Al <b>medir</b>, el qubit responde 0 o 1. Mientras más cerca del 0 apunta la
+        flecha, más probable es que salga 0.</p>
+      <p>Una <b>puerta</b> es una operación que <b>gira la flecha</b>. Aquí hay dos:
+        NOT y H.</p>
+      <button class="principal" id="empezar">Empezar los retos</button>
+    </div>
+
+    <div id="reto">
+      <p class="leyenda">
+        Cada puerta es media vuelta de la flecha. <b class="NOT">NOT</b> gira en torno
+        al eje horizontal. <b class="H">H</b> gira en torno a un eje inclinado.
+        <span id="leyendaM" class="oculto"><b class="M">mirar</b> mide el qubit a mitad
+        de camino.</span>
+      </p>
+
+      <div id="zonaLibre" class="oculto">
+        <div class="fila" style="margin-bottom:14px">
+          <button class="secundario NOT" id="masNOT">+ NOT</button>
+          <button class="secundario H" id="masH">+ H</button>
+          <button class="secundario M" id="masM">+ mirar</button>
+          <button class="secundario" id="borrar">Borrar</button>
+        </div>
+      </div>
+
+      <p class="pregunta" id="pregunta"></p>
+      <div class="opciones" id="opciones"></div>
+
+      <button class="principal" id="medir" disabled></button>
+      <p class="aviso" id="aviso">Elige una respuesta para poder medir.</p>
+
+      <div class="resultado oculto" id="resultado">
+        <div class="rejilla" id="rejilla" aria-hidden="true"></div>
+        <div class="barra"><span>Salió 0</span><div class="pista"><div class="relleno c0" id="b0"></div></div><span class="num" id="n0">0</span></div>
+        <div class="barra"><span>Salió 1</span><div class="pista"><div class="relleno c1" id="b1"></div></div><span class="num" id="n1">0</span></div>
+
+        <div class="cierre oculto" id="cierre"></div>
+
+        <div class="fila oculto" id="botones" style="margin-top:14px">
+          <button class="secundario" id="otra">Medir otra vez</button>
+          <button class="principal" id="siguiente">Siguiente</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Simulación de un qubit ideal, sin errores. Cada medición es al azar.</footer>
+</main>
+
+<script>
+// =====================================================================
+// Física: un qubit con amplitudes reales [a0, a1].
+// Con las puertas NOT y H, partiendo de 0, las amplitudes siempre son reales.
+// =====================================================================
+const R2 = Math.SQRT1_2;
+const PUERTAS = {
+  NOT: { eje: [1, 0, 0],   color: '#d9661f', aplicar: ([a, b]) => [b, a] },
+  H:   { eje: [R2, 0, R2], color: '#1b7f9c', aplicar: ([a, b]) => [R2 * (a + b), R2 * (a - b)] },
+};
+PUERTAS.M = { color: '#2c7a55' };   // «mirar»: medición a mitad de camino
+const ROTULO = { NOT: 'NOT', H: 'H', M: 'mirar' };
+// Una repetición completa del circuito: devuelve el estado final (con saltos al azar en «mirar»)
+function unaRepeticion(puertas) {
+  let e = [1, 0];
+  for (const g of puertas)
+    e = g === 'M' ? (Math.random() < e[1] * e[1] ? [0, 1] : [1, 0]) : PUERTAS[g].aplicar(e);
+  return e;
+}
+// Probabilidad exacta de medir 1 al final
+function probFinal(puertas, e = [1, 0]) {
+  for (let i = 0; i < puertas.length; i++) {
+    if (puertas[i] === 'M') {
+      const p = e[1] * e[1], resto = puertas.slice(i + 1);
+      return (1 - p) * probFinal(resto, [1, 0]) + p * probFinal(resto, [0, 1]);
+    }
+    e = PUERTAS[puertas[i]].aplicar(e);
+  }
+  const p = e[1] * e[1];
+  return p < 1e-9 ? 0 : p > 1 - 1e-9 ? 1 : p;
+}
+function prob1(e) {
+  const p = e[1] * e[1];
+  return p < 1e-9 ? 0 : p > 1 - 1e-9 ? 1 : p;
+}
+// Flecha en la esfera: arriba (z = 1) es 0, abajo (z = -1) es 1
+const flecha = ([a, b]) => [2 * a * b, 0, a * a - b * b];
+
+// =====================================================================
+// Esfera de Bloch (canvas). Dibujo adaptado de la página «La esfera de Bloch».
+// =====================================================================
+const cv = document.getElementById('esfera'), ctx = cv.getContext('2d');
+const AZ = -0.5, EL = -0.3;
+let vActual = [0, 0, 1];      // flecha que se dibuja
+let giro = null;              // {eje, color, rastro} mientras se anima una puerta
+const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const cruz = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const punto = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+function rodrigues(v, n, t) {            // gira v un ángulo t en torno al eje n
+  const c = Math.cos(t), s = Math.sin(t), cr = cruz(n, v), d = punto(n, v);
+  return [0, 1, 2].map(i => v[i]*c + cr[i]*s + n[i]*d*(1 - c));
+}
+function proyectar([x, y, z]) {
+  const x1 = x*Math.cos(AZ) - y*Math.sin(AZ), y1 = x*Math.sin(AZ) + y*Math.cos(AZ);
+  const arriba = z*Math.cos(EL) - y1*Math.sin(EL);
+  const fondo = y1*Math.cos(EL) + z*Math.sin(EL);
+  return { x: x1, y: -arriba, fondo };
+}
+function dibujar() {
+  const W = cv.width, H = cv.height, cx = W/2, cy = H/2, R = Math.min(W, H) * 0.36;
+  const P = v => { const p = proyectar(v); return [cx + p.x*R, cy + p.y*R, p.fondo]; };
+  ctx.clearRect(0, 0, W, H);
+
+  function trazo(pts, color, ancho, punteadoAtras) {
+    for (const frente of [false, true]) {
+      ctx.beginPath(); let iniciado = false;
+      for (const v of pts) {
+        const [sx, sy, f] = P(v);
+        if ((f <= 0.02) === frente) {
+          if (!iniciado) { ctx.moveTo(sx, sy); iniciado = true; } else ctx.lineTo(sx, sy);
+        } else iniciado = false;
+      }
+      ctx.strokeStyle = color; ctx.lineWidth = ancho;
+      ctx.globalAlpha = frente ? 1 : 0.35;
+      ctx.setLineDash(frente ? [] : (punteadoAtras || [6, 6]));
+      ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+  }
+  const circulo = f => Array.from({ length: 91 }, (_, i) => f(2*Math.PI*i/90));
+  function texto(v, t, color, fuente, dx = 0, dy = 0) {
+    const [x, y] = P(v);
+    ctx.fillStyle = color; ctx.font = fuente; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(t, x + dx, y + dy);
+  }
+
+  // esfera
+  const g = ctx.createRadialGradient(cx - R*0.35, cy - R*0.35, R*0.1, cx, cy, R*1.1);
+  g.addColorStop(0, 'rgba(27,127,156,0.16)'); g.addColorStop(1, 'rgba(27,127,156,0.03)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2*Math.PI); ctx.fill();
+  ctx.strokeStyle = '#9fb3bd'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2*Math.PI); ctx.stroke();
+
+  // ecuador, meridianos y eje vertical
+  trazo(circulo(t => [Math.cos(t), Math.sin(t), 0]), '#8fa3ad', 2.2);
+  trazo(circulo(t => [Math.cos(t), 0, Math.sin(t)]), '#c3d0d6', 1.6);
+  trazo(circulo(t => [0, Math.cos(t), Math.sin(t)]), '#c3d0d6', 1.6);
+  trazo([[0, 0, -1.12], [0, 0, 1.12]], '#8fa3ad', 2);
+  const F = '700 44px system-ui, sans-serif';
+  texto([0, 0, 1.3], '0', '#12303f', F);
+  texto([0, 0, -1.3], '1', '#12303f', F);
+  texto([1, 0, 0], 'mitad y mitad', '#5d7480', '500 24px system-ui, sans-serif', 20, 34);
+
+  // eje de giro y rastro de la puerta que se está aplicando
+  if (giro) {
+    const n = giro.eje;
+    trazo([n.map(x => -1.25*x), n.map(x => 1.25*x)], giro.color, 4, [10, 8]);
+    texto(n.map(x => 1.25*x), 'eje', giro.color, '600 26px system-ui, sans-serif', 26, -16);
+    if (giro.rastro.length > 1) trazo(giro.rastro, giro.color, 5);
+  }
+
+  // flecha del estado
+  const [x0, y0] = P([0, 0, 0]), [x1, y1] = P(vActual);
+  ctx.strokeStyle = ctx.fillStyle = '#12303f'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.lineCap = 'butt';
+  const ang = Math.atan2(y1 - y0, x1 - x0), L = 30;
+  if (Math.hypot(x1 - x0, y1 - y0) > 12) {
+    ctx.beginPath(); ctx.moveTo(x1 + 10*Math.cos(ang), y1 + 10*Math.sin(ang));
+    ctx.lineTo(x1 - L*Math.cos(ang - 0.45), y1 - L*Math.sin(ang - 0.45));
+    ctx.lineTo(x1 - L*Math.cos(ang + 0.45), y1 - L*Math.sin(ang + 0.45));
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(x0, y0, 7, 0, 2*Math.PI); ctx.fill();
+}
+// Gira la flecha un ángulo `ang` en torno a `eje`. Devuelve una promesa.
+function girar(eje, ang, color, duracion = 1000) {
+  const v0 = vActual.slice(), fin = rodrigues(v0, eje, ang);
+  if (sinMovimiento) { vActual = fin; dibujar(); return Promise.resolve(); }
+  return new Promise(listo => {
+    const t0 = performance.now();
+    giro = { eje, color, rastro: [v0] };
+    (function paso() {
+      const t = Math.min(1, (performance.now() - t0) / duracion);
+      const s = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+      vActual = rodrigues(v0, eje, ang * s);
+      giro.rastro.push(vActual);
+      dibujar();
+      if (t < 1) setTimeout(paso, 16);
+      else { vActual = fin; setTimeout(() => { giro = null; dibujar(); listo(); }, 350); }
+    })();
+  });
+}
+function describir(e) {
+  const p = prob1(e);
+  return p === 0 ? 'La flecha apunta a <b>0</b>.'
+    : p === 1 ? 'La flecha apunta a <b>1</b>.'
+    : 'La flecha apunta <b>al costado</b>: mitad y mitad.';
+}
+
+// =====================================================================
+// Retos
+// =====================================================================
+const OPC = [
+  { id: 'ninguna', texto: 'Ninguna vez' },
+  { id: 'mitad',   texto: 'Cerca de 50 veces' },
+  { id: 'todas',   texto: 'Las 100 veces' },
+];
+const RETOS = [
+  { intro: true, titulo: 'Un estado cuántico es una flecha' },
+  { titulo: 'Sin puertas', puertas: [],
+    pregunta: 'No se aplica ninguna puerta y se mide 100 veces. ¿Cuántas veces sale 1?',
+    porque: 'Sin puertas, la flecha sigue apuntando a 0. Siempre sale 0.' },
+  { titulo: 'Una puerta NOT', puertas: ['NOT'],
+    pregunta: 'Se aplica una puerta NOT y se mide 100 veces. ¿Cuántas veces sale 1?',
+    porque: 'NOT es media vuelta: lleva la flecha de 0 a 1. Siempre sale 1. Hasta aquí, nada distinto de un computador común.' },
+  { titulo: 'Dos puertas NOT', puertas: ['NOT', 'NOT'],
+    pregunta: 'Se aplican dos puertas NOT seguidas. ¿Cuántas veces sale 1?',
+    porque: 'Dos medias vueltas en torno al mismo eje son una vuelta completa: la flecha vuelve a 0.' },
+  { titulo: 'Una puerta H', puertas: ['H'],
+    pregunta: 'Se aplica una puerta H y se mide 100 veces. ¿Cuántas veces sale 1?',
+    porque: 'H deja la flecha al costado, a medio camino entre 0 y 1. Cada medición sale al azar, mitad y mitad. Casi nunca son exactamente 50.' },
+  { titulo: 'H y después NOT', puertas: ['H', 'NOT'],
+    pregunta: 'Primero H y después NOT. ¿Cuántas veces sale 1?',
+    porque: 'Después de H, la flecha apunta justo a lo largo del eje de NOT. Girar en torno a ese eje no la mueve: sigue saliendo mitad y mitad.' },
+  { titulo: 'Dos puertas H seguidas', puertas: ['H', 'H'],
+    pregunta: 'Se aplican dos puertas H, una tras otra. ¿Cuántas veces sale 1?',
+    porque: 'Dos medias vueltas en torno al mismo eje son una vuelta completa: la flecha vuelve a 0 con toda seguridad. Una moneda lanzada dos veces no hace eso.' },
+  { titulo: 'H, NOT y H', puertas: ['H', 'NOT', 'H'],
+    pregunta: 'Primero H, después NOT y después otra H. ¿Cuántas veces sale 1?',
+    porque: 'El NOT del medio no mueve la flecha, porque está sobre su eje. Entonces las dos H se deshacen igual que antes y la flecha vuelve a 0.' },
+  { titulo: 'Mirar a mitad de camino', puertas: ['H', 'M', 'H'], conMirar: true,
+    pregunta: 'Entre las dos H se mide el qubit («mirar»). ¿Cuántas veces sale 1 al final?',
+    porque: 'Al mirar, la flecha salta a 0 o a 1 y la segunda H ya no puede deshacer a la primera. El resultado vuelve a ser al azar. Es lo mismo que pasó con el detector en la doble rendija: medir a mitad de camino cambia el resultado.' },
+  { titulo: 'Circuito libre', libre: true, puertas: [], conMirar: true,
+    pregunta: 'Armen aquí los circuitos que pide la guía. Desafío: un circuito con al menos una puerta H en el que salga 1 las 100 veces.' },
+];
+const N_RETOS = RETOS.filter(r => !r.intro && !r.libre).length;
+const MAX_PUERTAS = 4, TOTAL = 100;
+
+let indice = 0, eleccion = null, ocupado = false, puertasLibres = [], aplicadas = false;
+let estadoLibre = [1, 0];     // estado que muestra la esfera en el circuito libre
+const $ = id => document.getElementById(id);
+const puertasActuales = () => RETOS[indice].libre ? puertasLibres : RETOS[indice].puertas;
+
+function dibujarCircuito(activa = -1, hechas = 0) {
+  const c = $('circuito'); c.innerHTML = '';
+  const add = (cls, txt) => { const d = document.createElement('div'); d.className = cls; d.textContent = txt; c.appendChild(d); };
+  add('inicio', '0'); add('cable', '');
+  puertasActuales().forEach((g, i) => {
+    add('puerta ' + g + (i === activa ? ' activa' : i < hechas ? ' hecha' : ''), ROTULO[g]); add('cable', '');
+  });
+  add('medidor', 'medir');
+}
+function dibujarPasos() {
+  $('pasos').innerHTML = RETOS.map((_, i) =>
+    `<span class="${i < indice ? 'hecho' : i === indice ? 'actual' : ''}"></span>`).join('');
+}
+function limpiarResultado() {
+  $('resultado').classList.add('oculto');
+  $('cierre').classList.add('oculto');
+  $('botones').classList.add('oculto');
+}
+function actualizarBoton() {
+  const reto = RETOS[indice];
+  const listo = reto.libre || eleccion !== null;
+  $('medir').disabled = !listo || ocupado;
+  $('medir').textContent = reto.libre || !reto.puertas.length ? 'Medir 100 veces' : 'Aplicar las puertas y medir';
+  $('aviso').classList.toggle('oculto', listo);
+}
+function mostrarReto() {
+  const reto = RETOS[indice];
+  eleccion = null; ocupado = false; puertasLibres = []; aplicadas = false; giro = null;
+  estadoLibre = [1, 0];
+  vActual = [0, 0, 1];
+  $('etiqueta').textContent = reto.intro ? 'Antes de empezar' : reto.libre ? 'Para terminar'
+    : `Reto ${indice} de ${N_RETOS}`;
+  $('titulo').textContent = reto.titulo;
+  for (const id of ['intro', 'introBotones']) $(id).classList.toggle('oculto', !reto.intro);
+  for (const id of ['reto', 'circuito']) $(id).classList.toggle('oculto', !!reto.intro);
+  $('estado').innerHTML = describir([1, 0]);
+  dibujarPasos(); dibujar();
+  if (reto.intro) return;
+  $('pregunta').textContent = reto.pregunta;
+  $('zonaLibre').classList.toggle('oculto', !reto.libre);
+  $('leyendaM').classList.toggle('oculto', !reto.conMirar);
+  const o = $('opciones'); o.innerHTML = '';
+  o.classList.toggle('oculto', !!reto.libre);
+  if (!reto.libre) for (const op of OPC) {
+    const b = document.createElement('button');
+    b.className = 'opcion'; b.textContent = op.texto;
+    b.onclick = () => {
+      if (ocupado || aplicadas) return;
+      eleccion = op.id;
+      o.querySelectorAll('.opcion').forEach(x => x.classList.toggle('elegida', x === b));
+      actualizarBoton();
+    };
+    o.appendChild(b);
+  }
+  $('siguiente').textContent = RETOS[indice + 1] && RETOS[indice + 1].libre ? 'Circuito libre' : 'Siguiente';
+  $('siguiente').classList.toggle('oculto', !!reto.libre);
+  dibujarCircuito(); limpiarResultado(); actualizarBoton();
+}
+
+// Aplica una puerta al estado `e`, anima la esfera y devuelve el estado nuevo
+async function aplicarUna(nombre, e, duracion) {
+  if (nombre === 'M') {
+    const sale1 = Math.random() < e[1] * e[1];
+    const nuevo = sale1 ? [0, 1] : [1, 0];
+    const seMueve = Math.abs(flecha(e)[2] - flecha(nuevo)[2]) > 1e-6;
+    if (seMueve) {                       // salto brusco hacia 0 o hacia 1
+      const ahora = Math.atan2(vActual[0], vActual[2]), destino = sale1 ? Math.PI : 0;
+      await girar([0, 1, 0], destino - ahora, PUERTAS.M.color, 220);
+    } else await new Promise(r => setTimeout(r, 350));
+    vActual = flecha(nuevo); dibujar();
+    $('estado').innerHTML = (seMueve ? 'Al mirar, la flecha <b>saltó a ' : 'Al mirar, la flecha sigue en <b>')
+      + (sale1 ? '1' : '0') + '</b>.' + (seMueve ? ' En otra repetición puede saltar al otro lado.' : '');
+    return nuevo;
+  }
+  const g = PUERTAS[nombre];
+  await girar(g.eje, Math.PI, g.color, duracion);
+  const nuevo = g.aplicar(e);
+  vActual = flecha(nuevo); dibujar();
+  $('estado').innerHTML = describir(nuevo);
+  return nuevo;
+}
+
+// ---------- Aplicar las puertas (gira la flecha) y medir ----------
+async function aplicarYMedir() {
+  if (ocupado) return;
+  const reto = RETOS[indice], puertas = puertasActuales();
+  ocupado = true; actualizarBoton(); limpiarResultado();
+  $('opciones').querySelectorAll('.opcion').forEach(b => b.disabled = true);
+  if (!reto.libre && !aplicadas) {
+    if (puertas.length) cv.scrollIntoView({ block: 'center', behavior: sinMovimiento ? 'auto' : 'smooth' });
+    let e = [1, 0];
+    for (let i = 0; i < puertas.length; i++) {
+      dibujarCircuito(i, i);
+      e = await aplicarUna(puertas[i], e, 1000);
+    }
+    dibujarCircuito(-1, puertas.length);
+    aplicadas = true;
+  }
+  const p = probFinal(puertas);
+  $('resultado').classList.remove('oculto');
+  const rej = $('rejilla'); rej.innerHTML = '';
+  const celdas = Array.from({ length: TOTAL }, () => rej.appendChild(document.createElement('i')));
+  let unos = 0, k = 0;
+  const pintar = () => {
+    $('n0').textContent = k - unos; $('n1').textContent = unos;
+    $('b0').style.width = (k - unos) + '%'; $('b1').style.width = unos + '%';
+  };
+  pintar();
+  await new Promise(listo => (function paso() {
+    for (let j = 0; j < 4 && k < TOTAL; j++, k++) {
+      const f = unaRepeticion(puertas), r = Math.random() < f[1] * f[1] ? 1 : 0;
+      unos += r; celdas[k].className = 'c' + r;
+    }
+    pintar();
+    if (k < TOTAL) setTimeout(paso, 45); else listo();
+  })());
+  const c = $('cierre'); c.classList.remove('oculto');
+  if (reto.libre) {
+    const tieneH = puertasLibres.includes('H'), logrado = tieneH && unos === TOTAL;
+    c.className = 'cierre ' + (logrado ? 'bien' : 'neutro');
+    c.innerHTML = logrado
+      ? '<strong>Desafío logrado.</strong><p>El circuito usa una puerta H y, aun así, el resultado es seguro: los giros se combinan y la flecha termina justo en 1.</p>'
+      : `<strong>Salió 1 en ${unos} de ${TOTAL} mediciones.</strong><p>${tieneH ? 'Todavía no sale 1 siempre. La flecha tiene que terminar apuntando a 1.' : 'Falta usar al menos una puerta H.'}</p>`;
+  } else {
+    const correcta = p === 0 ? 'ninguna' : p === 1 ? 'todas' : 'mitad';
+    const acierto = eleccion === correcta;
+    c.className = 'cierre ' + (acierto ? 'bien' : 'mal');
+    const tuya = OPC.find(x => x.id === eleccion).texto.toLowerCase();
+    c.innerHTML = `<strong>${acierto ? 'Tu predicción coincide.' : 'Tu predicción era «' + tuya + '».'}</strong>
+      Salió 1 en ${unos} de ${TOTAL} mediciones.<p>${reto.porque}</p>`;
+  }
+  $('botones').classList.remove('oculto');
+  ocupado = false; actualizarBoton();
+}
+
+// ---------- Eventos ----------
+$('medir').onclick = aplicarYMedir;
+$('otra').onclick = aplicarYMedir;
+function avanzar() { if (indice < RETOS.length - 1) { indice++; mostrarReto(); window.scrollTo(0, 0); } }
+$('siguiente').onclick = avanzar;
+$('empezar').onclick = () => { if (!ocupado) avanzar(); };
+
+// Introducción: llevar la flecha a 0, al costado o a 1
+document.querySelectorAll('[data-ver]').forEach(b => b.onclick = async () => {
+  if (ocupado) return;
+  const destino = { '0': 0, 'm': Math.PI / 2, '1': Math.PI }[b.dataset.ver];
+  const ahora = Math.atan2(vActual[0], vActual[2]);
+  ocupado = true;
+  if (Math.abs(destino - ahora) > 1e-6) await girar([0, 1, 0], destino - ahora, '#1b7f9c', 700);
+  vActual = [Math.sin(destino), 0, Math.cos(destino)]; dibujar();
+  $('estado').innerHTML = destino === 0 ? 'La flecha apunta a <b>0</b>: al medir, siempre sale 0.'
+    : destino === Math.PI ? 'La flecha apunta a <b>1</b>: al medir, siempre sale 1.'
+    : 'La flecha apunta <b>al costado</b>: sale 0 la mitad de las veces y 1 la otra mitad.';
+  ocupado = false;
+});
+
+// Circuito libre: cada puerta gira la flecha al agregarla
+async function agregar(nombre) {
+  if (ocupado || puertasLibres.length >= MAX_PUERTAS) return;
+  ocupado = true; actualizarBoton(); limpiarResultado();
+  puertasLibres.push(nombre);
+  dibujarCircuito(puertasLibres.length - 1, puertasLibres.length - 1);
+  estadoLibre = await aplicarUna(nombre, estadoLibre, 800);
+  dibujarCircuito(-1, puertasLibres.length);
+  ocupado = false; actualizarBoton();
+}
+$('masNOT').onclick = () => agregar('NOT');
+$('masH').onclick = () => agregar('H');
+$('masM').onclick = () => agregar('M');
+$('borrar').onclick = () => {
+  if (ocupado) return;
+  puertasLibres = []; estadoLibre = [1, 0]; vActual = [0, 0, 1]; dibujar();
+  $('estado').innerHTML = describir([1, 0]);
+  dibujarCircuito(); limpiarResultado();
+};
+
+mostrarReto();
+</script>
+</body>
+</html>

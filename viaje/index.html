@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un viaje a Próxima Centauri — FIS093</title>
+<style>
+  :root {
+    --tinta: #12303f;
+    --texto: #263b47;
+    --suave: #5d7480;
+    --borde: #d5e0e5;
+    --fondo: #f4f7f8;
+    --tarjeta: #ffffff;
+    --azul: #1b7f9c;
+    --azul-claro: #e2f1f5;
+    --naranja: #d9661f;
+    --naranja-claro: #fbeadd;
+    --verde: #2c7a55;
+    --verde-claro: #e3f3ea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--texto);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; }
+  header h1 { font-size: 1.25rem; margin: 4px 0 2px; color: var(--tinta); }
+  header p { margin: 0; color: var(--suave); font-size: .9rem; }
+
+  .pasos { display: flex; gap: 6px; margin: 16px 0 12px; }
+  .pasos span { flex: 1; height: 6px; border-radius: 3px; background: var(--borde); }
+  .pasos span.hecho { background: var(--azul); }
+  .pasos span.actual { background: var(--tinta); }
+
+  .tarjeta {
+    background: var(--tarjeta); border: 1px solid var(--borde);
+    border-radius: 14px; padding: 18px 16px;
+  }
+  .etiqueta { font-size: .8rem; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--azul); }
+  h2 { font-size: 1.1rem; margin: 2px 0 10px; color: var(--tinta); }
+  p { margin: 0 0 10px; }
+
+  /* escena */
+  .escena { display: block; width: 100%; border-radius: 10px; background: #0f2531; }
+  .datos { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0 10px;
+    font-size: .88rem; color: var(--suave); }
+  .datos b { color: var(--tinta); font-variant-numeric: tabular-nums; }
+  .relojes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .reloj { border-radius: 10px; padding: 10px 12px; border: 2px solid var(--borde); background: #fff; }
+  .reloj.tierra { border-color: var(--azul); }
+  .reloj.nave { border-color: var(--naranja); }
+  .reloj span { display: block; font-size: .78rem; font-weight: 600; letter-spacing: .03em;
+    text-transform: uppercase; }
+  .reloj.tierra span { color: var(--azul); } .reloj.nave span { color: var(--naranja); }
+  .reloj b { font-size: 1.45rem; color: var(--tinta); font-variant-numeric: tabular-nums; }
+  .reloj small { color: var(--suave); }
+  .barra2 { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 8px;
+    font-size: .82rem; color: var(--suave); margin: 3px 0; }
+  .barra2 .pista { height: 12px; background: var(--fondo); border-radius: 6px; overflow: hidden; }
+  .barra2 .relleno { height: 100%; width: 0; border-radius: 6px; }
+  .barra2 .relleno.t { background: var(--azul); } .barra2 .relleno.n { background: var(--naranja); }
+
+  .pregunta { font-weight: 600; color: var(--tinta); margin: 14px 0 10px; }
+  .opciones { display: grid; gap: 8px; margin-bottom: 14px; }
+  button { font: inherit; cursor: pointer; }
+  .opcion {
+    text-align: left; padding: 12px 14px; border-radius: 10px;
+    border: 2px solid var(--borde); background: #fff; color: var(--texto);
+  }
+  .opcion.elegida { border-color: var(--tinta); background: var(--azul-claro); font-weight: 600; }
+  .opcion:disabled { cursor: default; opacity: .75; }
+  .principal {
+    width: 100%; padding: 14px; border: 0; border-radius: 10px;
+    background: var(--tinta); color: #fff; font-weight: 700; font-size: 1rem;
+  }
+  .principal:disabled { background: #b7c4ca; cursor: not-allowed; }
+  .secundario {
+    padding: 12px 10px; border-radius: 10px; border: 2px solid var(--tinta);
+    background: #fff; color: var(--tinta); font-weight: 600;
+  }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fila > * { flex: 1; }
+  .aviso { font-size: .85rem; color: var(--suave); margin: 8px 0 0; text-align: center; }
+
+  .deslizador { margin: 12px 0 4px; }
+  .deslizador label { display: flex; justify-content: space-between; font-weight: 600; color: var(--tinta); }
+  .deslizador input { width: 100%; margin: 8px 0 0; accent-color: var(--tinta); }
+
+  .cierre { margin-top: 14px; padding: 12px 14px; border-radius: 10px; }
+  .cierre.bien { background: var(--verde-claro); border-left: 4px solid var(--verde); }
+  .cierre.mal { background: var(--naranja-claro); border-left: 4px solid var(--naranja); }
+  .cierre.neutro { background: var(--azul-claro); border-left: 4px solid var(--azul); }
+  .cierre strong { color: var(--tinta); }
+  .cierre p { margin: 4px 0 0; }
+  .oculto { display: none !important; }
+  footer { margin-top: 18px; font-size: .8rem; color: var(--suave); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Un viaje a Próxima Centauri</h1>
+    <p>FIS093 · En grupos de 2 o 3 · Primero se adivina, después se lanza la nave.</p>
+  </header>
+
+  <div class="pasos" id="pasos" aria-hidden="true"></div>
+
+  <section class="tarjeta" aria-live="polite">
+    <div class="etiqueta" id="etiqueta"></div>
+    <h2 id="titulo"></h2>
+
+    <div id="intro">
+      <p>Próxima Centauri está a <b>4,24 años luz</b>. Una nave viaja hasta allá con
+        rapidez constante. Hay dos relojes: uno se queda en la <b>Tierra</b> y el otro
+        va en la <b>nave</b>.</p>
+    </div>
+
+    <canvas class="escena" id="escena" width="640" height="200"
+      aria-label="La nave viaja de la Tierra a la estrella"></canvas>
+    <div class="datos">
+      <span>Rapidez: <b id="dV"></b></span>
+      <span>γ = <b id="dG"></b></span>
+      <span>Camino desde la nave: <b id="dL"></b></span>
+    </div>
+
+    <div class="relojes">
+      <div class="reloj tierra"><span>Reloj de la Tierra</span><b id="rT">0,00</b> <small>años</small></div>
+      <div class="reloj nave"><span>Reloj de la nave</span><b id="rN">0,00</b> <small>años</small></div>
+    </div>
+    <div class="barra2"><span>Tierra</span><div class="pista"><div class="relleno t" id="bT"></div></div></div>
+    <div class="barra2"><span>Nave</span><div class="pista"><div class="relleno n" id="bN"></div></div></div>
+
+    <div id="introBotones">
+      <p style="margin-top:12px">En cada reto hay que <b>elegir una respuesta antes</b> de
+        lanzar la nave. Después se comparan los dos relojes.</p>
+      <button class="principal" id="empezar">Empezar los retos</button>
+    </div>
+
+    <div id="reto">
+      <div id="zonaLibre" class="oculto">
+        <div class="deslizador">
+          <label for="vel"><span>Rapidez de la nave</span><span id="velTxt"></span></label>
+          <input type="range" id="vel" min="100" max="999" value="500">
+        </div>
+      </div>
+
+      <p class="pregunta" id="pregunta"></p>
+      <div class="opciones" id="opciones"></div>
+
+      <button class="principal" id="lanzar" disabled>Lanzar la nave</button>
+      <p class="aviso" id="aviso">Elige una respuesta para poder lanzar.</p>
+
+      <div class="cierre oculto" id="cierre"></div>
+      <div class="fila oculto" id="botones" style="margin-top:14px">
+        <button class="secundario" id="otra">Repetir el viaje</button>
+        <button class="principal" id="siguiente">Siguiente</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Relatividad especial: rapidez constante, sin contar la partida ni el frenado.</footer>
+</main>
+
+<script>
+// ---------- Física ----------
+const D = 4.24;                                   // años luz, medida desde la Tierra
+const gamma = b => 1 / Math.sqrt(1 - b * b);
+const num = (x, d = 2) => x.toFixed(d).replace('.', ',');
+function viaje(b, idaYVuelta) {
+  const g = gamma(b), k = idaYVuelta ? 2 : 1;
+  return { g, tTierra: k * D / b, tNave: k * D / b / g, camino: D / g };
+}
+
+// ---------- Retos ----------
+const RETOS = [
+  { intro: true, titulo: 'Dos relojes para un mismo viaje', b: 0.5 },
+  { titulo: 'Despacio: 10 % de la rapidez de la luz', b: 0.1,
+    pregunta: 'Para la Tierra, el viaje dura 42,4 años. ¿Cuánto marca el reloj de la nave al llegar?',
+    opciones: ['Casi lo mismo: 42,2 años', 'La mitad: 21,2 años', 'Mucho menos: 4,2 años'], correcta: 0,
+    porque: 'A esta rapidez, γ = 1,005: los dos relojes casi coinciden. Por eso en la vida diaria nadie nota la dilatación del tiempo.' },
+  { titulo: 'La mitad de la rapidez de la luz', b: 0.5,
+    pregunta: 'Para la Tierra, el viaje dura 8,48 años. ¿Cuánto marca el reloj de la nave?',
+    opciones: ['Lo mismo: 8,48 años', 'La mitad: 4,24 años', 'Un poco menos: 7,34 años'], correcta: 2,
+    porque: 'Con γ = 1,15, el reloj de la nave marca 8,48/1,15 = 7,34 años. Ir a la mitad de la rapidez de la luz no reduce el tiempo a la mitad.' },
+  { titulo: 'El viaje de la clase: 0,8 c', b: 0.8,
+    pregunta: 'Para la Tierra, el viaje dura 5,3 años. ¿Cuánto marca el reloj de la nave?',
+    opciones: ['5,3 años', '3,18 años', '4,24 años'], correcta: 1,
+    porque: 'γ = 1,67. El reloj de la nave está en la salida y en la llegada: mide el tiempo propio, 5,3/1,67 = 3,18 años.' },
+  { titulo: 'Desde la nave, a 0,8 c', b: 0.8,
+    pregunta: 'El viajero tarda 3,18 años a 0,8 c. Para él, ¿a qué distancia estaba la estrella?',
+    opciones: ['4,24 años luz, igual que para la Tierra', '2,54 años luz', '7,07 años luz'], correcta: 1,
+    porque: 'Para el viajero, el camino se contrae: 4,24/1,67 = 2,54 años luz. Y 2,54/0,8 = 3,18 años: los dos cálculos coinciden.' },
+  { titulo: 'Ida y vuelta a 0,8 c', b: 0.8, vuelta: true,
+    pregunta: 'La nave va y vuelve. Al regresar, ¿cuánto más joven es el viajero que quien se quedó?',
+    opciones: ['Nada: tienen la misma edad', '4,2 años más joven', '10,6 años más joven'], correcta: 1,
+    porque: 'En la Tierra pasan 10,6 años y en la nave 6,36. La diferencia es de 4,2 años, y es real: el viajero vuelve más joven.' },
+  { titulo: 'Casi la rapidez de la luz: 0,99 c', b: 0.99,
+    pregunta: 'Para la Tierra, el viaje dura 4,28 años. ¿Cuánto marca el reloj de la nave?',
+    opciones: ['Unos 7 meses: 0,60 años', 'La mitad: 2,1 años', 'Casi lo mismo: 4,2 años'], correcta: 0,
+    porque: 'γ = 7,09: el reloj de la nave marca 4,28/7,09 = 0,60 años. Cerca de c, γ crece muy rápido.' },
+  { titulo: 'Más rápido todavía: 0,999 c', b: 0.999,
+    pregunta: 'El viajero puede tardar cada vez menos. ¿Y la Tierra? ¿Puede ver llegar la nave en menos de 4,24 años?',
+    opciones: ['Sí, si la nave va suficientemente rápido', 'No: para la Tierra siempre tarda más de 4,24 años', 'Solo si la nave va justo a la rapidez de la luz'], correcta: 1,
+    porque: 'Para el viajero pasan solo 0,19 años, unos 69 días. Para la Tierra pasan 4,244 años: la nave nunca le gana a la luz, que tarda 4,24.' },
+  { titulo: 'Rapidez libre', libre: true, b: 0.5,
+    pregunta: 'Desafío: encontrar la rapidez con la que el reloj de la nave marca justo la mitad que el de la Tierra.' },
+];
+const N_RETOS = RETOS.filter(r => !r.intro && !r.libre).length;
+
+// ---------- Estado y dibujo ----------
+const $ = id => document.getElementById(id);
+const cv = $('escena'), ctx = cv.getContext('2d');
+let indice = 0, eleccion = null, ocupado = false, lanzado = false, bLibre = 0.5;
+let frac = 0, deVuelta = false;                    // posición de la nave (0 a 1)
+const estrellas = Array.from({ length: 60 }, (_, i) => [(i * 97) % 640, (i * 53 + 17) % 200, (i % 3) * 0.5 + 0.6]);
+const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const bActual = () => RETOS[indice].libre ? bLibre : RETOS[indice].b;
+
+function dibujar() {
+  const W = cv.width, H = cv.height, x0 = 70, x1 = W - 70, y = 92;
+  ctx.fillStyle = '#0f2531'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#9fb3bd';
+  for (const [x, yy, r] of estrellas) { ctx.beginPath(); ctx.arc(x, yy, r, 0, 7); ctx.fill(); }
+  const v = viaje(bActual(), false);
+  // camino medido desde la Tierra
+  ctx.strokeStyle = '#5d7480'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#c9d6dc'; ctx.font = '20px system-ui, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('4,24 años luz, desde la Tierra', W / 2, 40);
+  // camino contraído, desde la nave
+  const largo = (x1 - x0) / v.g;
+  ctx.strokeStyle = '#f0a269'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(W / 2 - largo / 2, 158); ctx.lineTo(W / 2 + largo / 2, 158); ctx.stroke();
+  ctx.lineCap = 'butt';
+  ctx.fillStyle = '#f0a269'; ctx.fillText(num(v.camino) + ' años luz, desde la nave', W / 2, 186);
+  // Tierra y estrella
+  ctx.fillStyle = '#3aa6c6'; ctx.beginPath(); ctx.arc(x0 - 28, y, 22, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f2b24a'; ctx.beginPath(); ctx.arc(x1 + 28, y, 13, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c9d6dc'; ctx.font = '17px system-ui, sans-serif';
+  ctx.fillText('Tierra', x0 - 28, y + 46); ctx.fillText('Próxima', x1 + 28, y + 40);
+  // nave
+  const x = x0 + (x1 - x0) * frac, s = deVuelta ? -1 : 1;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.moveTo(x + 16 * s, y); ctx.lineTo(x - 12 * s, y - 9); ctx.lineTo(x - 12 * s, y + 9);
+  ctx.closePath(); ctx.fill();
+}
+// Decimales del reloj de la Tierra: tres cuando la nave va casi a c, para ver que supera 4,24
+const decT = t => t >= 10 ? 1 : bActual() > 0.995 ? 3 : 2;
+function mostrarRelojes(tT, tN, total) {
+  $('rT').textContent = num(tT, decT(tT)); $('rN').textContent = num(tN, tN >= 10 ? 1 : 2);
+  $('bT').style.width = (100 * tT / total) + '%'; $('bN').style.width = (100 * tN / total) + '%';
+}
+function mostrarDatos() {
+  const b = bActual(), v = viaje(b, false);
+  $('dV').textContent = num(b, b > 0.99 ? 3 : 2) + ' c';
+  $('dG').textContent = num(v.g, v.g < 1.1 ? 3 : 2);
+  $('dL').textContent = num(v.camino) + ' años luz';
+}
+
+// ---------- Flujo ----------
+function dibujarPasos() {
+  $('pasos').innerHTML = RETOS.map((_, i) =>
+    `<span class="${i < indice ? 'hecho' : i === indice ? 'actual' : ''}"></span>`).join('');
+}
+function actualizarBoton() {
+  const reto = RETOS[indice], listo = reto.libre || eleccion !== null;
+  $('lanzar').disabled = !listo || ocupado;
+  $('aviso').classList.toggle('oculto', listo);
+}
+function mostrarReto() {
+  const reto = RETOS[indice];
+  eleccion = null; ocupado = false; lanzado = false; frac = 0; deVuelta = false;
+  $('etiqueta').textContent = reto.intro ? 'Antes de empezar' : reto.libre ? 'Para terminar'
+    : `Reto ${indice} de ${N_RETOS}`;
+  $('titulo').textContent = reto.titulo;
+  for (const id of ['intro', 'introBotones']) $(id).classList.toggle('oculto', !reto.intro);
+  $('reto').classList.toggle('oculto', !!reto.intro);
+  $('cierre').classList.add('oculto'); $('botones').classList.add('oculto');
+  dibujarPasos(); mostrarDatos(); mostrarRelojes(0, 0, 1); dibujar();
+  if (reto.intro) return;
+  $('pregunta').textContent = reto.pregunta;
+  $('zonaLibre').classList.toggle('oculto', !reto.libre);
+  if (reto.libre) { $('vel').value = Math.round(bLibre * 1000); $('velTxt').textContent = num(bLibre, 3) + ' c'; }
+  const o = $('opciones'); o.innerHTML = '';
+  o.classList.toggle('oculto', !!reto.libre);
+  if (!reto.libre) reto.opciones.forEach((txt, i) => {
+    const b = document.createElement('button');
+    b.className = 'opcion'; b.textContent = txt;
+    b.onclick = () => {
+      if (ocupado || lanzado) return;
+      eleccion = i;
+      o.querySelectorAll('.opcion').forEach(x => x.classList.toggle('elegida', x === b));
+      actualizarBoton();
+    };
+    o.appendChild(b);
+  });
+  $('siguiente').textContent = RETOS[indice + 1] && RETOS[indice + 1].libre ? 'Rapidez libre' : 'Siguiente';
+  $('siguiente').classList.toggle('oculto', !!reto.libre);
+  actualizarBoton();
+}
+function lanzar() {
+  if (ocupado) return;
+  const reto = RETOS[indice], v = viaje(bActual(), !!reto.vuelta);
+  ocupado = true; lanzado = true; actualizarBoton();
+  $('cierre').classList.add('oculto'); $('botones').classList.add('oculto');
+  $('opciones').querySelectorAll('.opcion').forEach(b => b.disabled = true);
+  cv.scrollIntoView({ block: 'start', behavior: sinMovimiento ? 'auto' : 'smooth' });
+  const dur = sinMovimiento ? 1 : (reto.vuelta ? 5200 : 3200), t0 = performance.now();
+  (function paso() {
+    const t = Math.min(1, (performance.now() - t0) / dur);
+    if (reto.vuelta) { deVuelta = t > 0.5; frac = t <= 0.5 ? 2 * t : 2 - 2 * t; } else frac = t;
+    mostrarRelojes(v.tTierra * t, v.tNave * t, v.tTierra);
+    dibujar();
+    if (t < 1) { setTimeout(paso, 16); return; }
+    const c = $('cierre'); c.classList.remove('oculto');
+    if (reto.libre) {
+      const razon = v.tNave / v.tTierra, logrado = Math.abs(razon - 0.5) < 0.006;
+      c.className = 'cierre ' + (logrado ? 'bien' : 'neutro');
+      c.innerHTML = logrado
+        ? `<strong>Desafío logrado.</strong><p>A ${num(bActual(), 3)} c, γ = 2: el reloj de la nave marca la mitad. Hace falta ir al 87 % de la rapidez de la luz.</p>`
+        : `<strong>El reloj de la nave marcó el ${num(100 * razon, 0)} % del de la Tierra.</strong><p>${razon > 0.5 ? 'Todavía es más de la mitad: hay que ir más rápido.' : 'Es menos de la mitad: hay que ir más lento.'}</p>`;
+    } else {
+      const acierto = eleccion === reto.correcta;
+      c.className = 'cierre ' + (acierto ? 'bien' : 'mal');
+      c.innerHTML = `<strong>${acierto ? 'Tu predicción coincide.' : 'Tu predicción era «' + reto.opciones[eleccion] + '».'}</strong>
+        Tierra: ${num(v.tTierra, decT(v.tTierra))} años. Nave: ${num(v.tNave, v.tNave >= 10 ? 1 : 2)} años.<p>${reto.porque}</p>`;
+    }
+    $('botones').classList.remove('oculto');
+    ocupado = false; actualizarBoton();
+  })();
+}
+
+// ---------- Eventos ----------
+$('lanzar').onclick = lanzar;
+$('otra').onclick = lanzar;
+function avanzar() { if (!ocupado && indice < RETOS.length - 1) { indice++; mostrarReto(); window.scrollTo(0, 0); } }
+$('siguiente').onclick = avanzar;
+$('empezar').onclick = avanzar;
+$('vel').oninput = e => {
+  if (ocupado) { e.target.value = Math.round(bLibre * 1000); return; }
+  bLibre = e.target.value / 1000; frac = 0; deVuelta = false;
+  $('velTxt').textContent = num(bLibre, 3) + ' c';
+  $('cierre').classList.add('oculto'); $('botones').classList.add('oculto');
+  mostrarDatos(); mostrarRelojes(0, 0, 1); dibujar();
+};
+
+mostrarReto();
+</script>
+</body>
+</html>
